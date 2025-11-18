@@ -61,23 +61,27 @@
 // the above pipeline is working up to build
 
 pipeline {
-    agent any
+    agent { label 'windows' }   // Windows Jenkins agent
 
     environment {
         REPO_URL        = 'https://github.com/Suhasreddy257/xr-dashbaoard-backend-dev.git'
-        GIT_CREDENTIALS = 'token'
+        GIT_CREDENTIALS = 'token'   // Jenkins credential ID
         SOLUTION_FILE   = 'AP.CHRP.XRDB.WebApi.sln'
         WEBAPI_PROJECT  = 'AP.CHRP.XRDB.WebApi/AP.CHRP.XRDB.WebApi.csproj'
+
+        // Folder where published files should go
         PUBLISH_DIR     = 'D:\\backend_codebuildpipeline'
+
+        // IIS config
         IIS_SITE_NAME   = 'XRdashboard_Backend'
-        // If your app pool name is different, change this:
-        IIS_APPPOOL     = 'XRdashboard_Backend'
+        IIS_APPPOOL     = 'XRdashboard_Backend'  // change if your app pool has a different name
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'master',  // we fixed this earlier
+                echo 'Checking out code from GitHub (master branch)...'
+                git branch: 'master',
                     credentialsId: GIT_CREDENTIALS,
                     url: REPO_URL
             }
@@ -85,6 +89,7 @@ pipeline {
 
         stage('Restore') {
             steps {
+                echo 'Running dotnet restore...'
                 bat """
                 dotnet restore "${SOLUTION_FILE}"
                 """
@@ -93,6 +98,7 @@ pipeline {
 
         stage('Build') {
             steps {
+                echo 'Building solution in Release mode...'
                 bat """
                 dotnet build "${SOLUTION_FILE}" -c Release --no-restore
                 """
@@ -101,6 +107,7 @@ pipeline {
 
         stage('Test') {
             steps {
+                echo 'Running tests...'
                 bat """
                 dotnet test "${SOLUTION_FILE}" -c Release --no-build
                 """
@@ -109,9 +116,9 @@ pipeline {
 
         stage('Publish') {
             steps {
+                echo "Publishing WebApi project to ${PUBLISH_DIR} ..."
+                // No delete here to avoid 'Access is denied' when IIS locks files
                 bat """
-                if exist "${PUBLISH_DIR}" rmdir /S /Q "${PUBLISH_DIR}"
-                mkdir "${PUBLISH_DIR}"
                 dotnet publish "${WEBAPI_PROJECT}" -c Release -o "${PUBLISH_DIR}"
                 """
             }
@@ -119,24 +126,35 @@ pipeline {
 
         stage('Deploy to IIS') {
             steps {
-                // Use PowerShell to point the IIS site to the new folder and restart it
-                bat """
-                powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-                  "Import-Module WebAdministration; ^
-                   Set-ItemProperty 'IIS:\\Sites\\${IIS_SITE_NAME}' -Name physicalPath -Value '${PUBLISH_DIR}'; ^
-                   Restart-WebAppPool -Name '${IIS_APPPOOL}'; ^
-                   Restart-WebItem 'IIS:\\Sites\\${IIS_SITE_NAME}'"
-                """
+                echo "Updating IIS site '${IIS_SITE_NAME}' and restarting..."
+                // Run PowerShell natively (cleaner than putting PS inside bat)
+                powershell '''
+                  Import-Module WebAdministration
+
+                  $siteName = $env:IIS_SITE_NAME
+                  $appPool  = $env:IIS_APPPOOL
+                  $path     = $env:PUBLISH_DIR
+
+                  Write-Host "Setting IIS site path for $siteName to $path"
+                  Set-ItemProperty "IIS:\\Sites\\$siteName" -Name physicalPath -Value $path
+
+                  Write-Host "Restarting App Pool: $appPool"
+                  Restart-WebAppPool -Name $appPool
+
+                  Write-Host "Restarting Site: $siteName"
+                  Restart-WebItem "IIS:\\Sites\\$siteName"
+                '''
             }
         }
     }
 
     post {
         success {
-            echo '✅ Build, test, publish and IIS deploy completed successfully.'
+            echo '✅ Build, test, publish, and IIS deploy completed successfully.'
         }
         failure {
-            echo '❌ Pipeline failed. Check the logs above.'
+            echo '❌ Pipeline failed. Check the logs above in each stage.'
         }
     }
 }
+
