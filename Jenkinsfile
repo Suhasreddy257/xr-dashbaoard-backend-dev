@@ -61,7 +61,7 @@
 // the above pipeline is working up to build
 
 pipeline {
-    agent { label 'windows' }   // Windows Jenkins agent
+    agent any   // Windows Jenkins agent
 
     environment {
         REPO_URL        = 'https://github.com/Suhasreddy257/xr-dashbaoard-backend-dev.git'
