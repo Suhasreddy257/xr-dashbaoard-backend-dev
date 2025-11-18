@@ -1,18 +1,18 @@
 pipeline {
-    agent any
+    agent { label 'windows' }
 
     environment {
-        REPO_URL       = 'https://github.com/Suhasreddy257/xr-dashbaoard-backend-dev.git'
-        GIT_CREDENTIALS = 'token'   // Jenkins credentials ID
-        SOLUTION_FILE  = 'AP.CHRP.XRDB.WebApi.sln'
-        WEBAPI_PROJECT = 'AP.CHRP.XRDB.WebApi/AP.CHRP.XRDB.WebApi.csproj'
-        PUBLISH_DIR    = 'D:\\backend_codebuildpipeline'
+        REPO_URL        = 'https://github.com/Suhasreddy257/xr-dashbaoard-backend-dev.git'
+        GIT_CREDENTIALS = 'token'
+        SOLUTION_FILE   = 'AP.CHRP.XRDB.WebApi.sln'
+        WEBAPI_PROJECT  = 'AP.CHRP.XRDB.WebApi/AP.CHRP.XRDB.WebApi.csproj'
+        PUBLISH_DIR     = 'D:\\backend_codebuildpipeline'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
+                git branch: 'master',          // 👈 change this
                     credentialsId: GIT_CREDENTIALS,
                     url: REPO_URL
             }
@@ -54,11 +54,7 @@ pipeline {
     }
 
     post {
-        success {
-            echo '✅ Build, test, and publish completed successfully.'
-        }
-        failure {
-            echo '❌ Pipeline failed. Check the logs above.'
-        }
+        success { echo '✅ Build, test, and publish completed successfully.' }
+        failure { echo '❌ Pipeline failed. Check the logs above.' }
     }
 }
