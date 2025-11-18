@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'windows' }   // your Windows agent label
+    agent any
 
     environment {
         REPO_URL       = 'https://github.com/Suhasreddy257/xr-dashbaoard-backend-dev.git'
