@@ -169,10 +169,10 @@ pipeline {
         WEBAPI_PROJECT  = 'AP.CHRP.XRDB.WebApi/AP.CHRP.XRDB.WebApi.csproj'
 
         // Folder where published files should go
-        PUBLISH_DIR     = 'D:\\backend_codebuildpipeline_datanetst'
+        PUBLISH_DIR     = 'D:\\backend_codebuildpipeline'
 
         // IIS config
-        IIS_SITE_NAME   = 'XRdashboard_Backend'
+        IIS_SITE_NAME   = 'XRdashboard_Backend563798272'
         IIS_APPPOOL     = 'XRdashboard_Backend'  // change if your app pool has a different name
 
         // Email notification (same email as frontend)
