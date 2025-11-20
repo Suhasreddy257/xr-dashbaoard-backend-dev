@@ -160,7 +160,7 @@
 // this pipeline is working all up to deployment also 
 
 pipeline {
-    agent any   // Windows Jenkins agent
+    agent any   Windows Jenkins agent
 
     environment {
         REPO_URL        = 'https://github.com/Suhasreddy257/xr-dashbaoard-backend-dev.git'
