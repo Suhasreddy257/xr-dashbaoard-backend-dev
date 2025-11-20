@@ -169,7 +169,7 @@ pipeline {
         WEBAPI_PROJECT  = 'AP.CHRP.XRDB.WebApi/AP.CHRP.XRDB.WebApi.csproj'
 
         // Folder where published files should go
-        PUBLISH_DIR     = 'D:\\backend_codebuildpipeline'
+        PUBLISH_DIR     = 'D:\\backend_codebuildpipeline_datanetst'
 
         // IIS config
         IIS_SITE_NAME   = 'XRdashboard_Backend'
@@ -189,7 +189,7 @@ pipeline {
             }
         }
 
-        stage('Restore ingdata') {
+        stage('Restore') {
             steps {
                 echo 'Running dotnet restore...'
                 bat """
