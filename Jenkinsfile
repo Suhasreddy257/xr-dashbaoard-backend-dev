@@ -172,7 +172,7 @@ pipeline {
         PUBLISH_DIR     = 'D:\\backend_codebuildpipeline'
 
         // IIS config
-        IIS_SITE_NAME   = 'XRdashboard_Backend563798272'
+        IIS_SITE_NAME   = 'XRdashboard_Backend'
         IIS_APPPOOL     = 'XRdashboard_Backend'  // change if your app pool has a different name
 
         // Email notification (same email as frontend)
