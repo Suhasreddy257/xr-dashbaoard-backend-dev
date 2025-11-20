@@ -189,7 +189,7 @@ pipeline {
             }
         }
 
-        stage('Restore') {
+        stage('Restore ingdata') {
             steps {
                 echo 'Running dotnet restore...'
                 bat """
