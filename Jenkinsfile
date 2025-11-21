@@ -301,7 +301,7 @@
 //This pipeline is working all and come to send email succes also
 
 pipeline {
-    agent any  // Windows Jenkins agent
+    agent any   // Windows Jenkins agent
 
     environment {
         REPO_URL        = 'https://github.com/Suhasreddy257/xr-dashbaoard-backend-dev.git'
@@ -314,9 +314,9 @@ pipeline {
 
         // IIS config
         IIS_SITE_NAME   = 'XRdashboard_Backend'
-        IIS_APPPOOL     = 'XRdashboard_Backend'  // change if your app pool has a different name
+        IIS_APPPOOL     = 'XRdashboard_Backend'
 
-        // Email notification (same email as frontend)
+        // Email notification
         PERSONAL_EMAIL  = 'reddydr257@gmail.com'
     }
 
@@ -333,11 +333,11 @@ pipeline {
         stage('Approval Before Build & Deploy') {
             steps {
                 script {
-                    echo 'Sending approval email before backend build & deploy...'
+                    echo "Sending approval email before backend build & deploy..."
 
-                    // 1) Send approval request email
+                    // 1) Send approval email
                     mail to: "${env.PERSONAL_EMAIL}",
-                         subject: "APPROVAL REQUIRED: BACKEND build & deploy ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                         subject: "APPROVAL NEEDED: BACKEND build & deploy #${env.BUILD_NUMBER}",
                          body: """Hello Suhas,
 
 A new BACKEND build & deploy has been triggered for:
@@ -346,7 +346,7 @@ Job      : ${env.JOB_NAME}
 Build    : #${env.BUILD_NUMBER}
 Git repo : ${env.REPO_URL}
 
-The pipeline is waiting for your approval BEFORE proceeding to:
+The pipeline is waiting for your APPROVAL BEFORE proceeding to:
 - dotnet restore / build / test / publish
 - IIS deploy to site: ${env.IIS_SITE_NAME}
 - Physical path: ${env.PUBLISH_DIR}
@@ -360,17 +360,13 @@ Regards,
 Jenkins (Backend pipeline)
 """
 
-                    // 2) Wait for manual approval in Jenkins UI
-                    timeout(time: 2, unit: 'HOURS') {    // adjust time as you like
+                    // 2) Wait for manual approval in Jenkins UI (not via email)
+                    timeout(time: 2, unit: 'HOURS') {
                         input message: 'Approve BACKEND build & deploy to IIS?',
-                              ok: 'Approve and continue'
-                        // You can restrict who can approve (optional):
-                        // input message: 'Approve BACKEND build & deploy to IIS?',
-                        //       ok: 'Approve and continue',
-                        //       submitter: 'Suhas'  // Jenkins username
+                              ok: 'Proceed'
                     }
 
-                    echo 'Approval received, continuing pipeline...'
+                    echo "Approval received, continuing backend pipeline..."
                 }
             }
         }
@@ -479,11 +475,32 @@ Jenkins (Backend pipeline)
 """
         }
 
+        aborted {
+            echo '⚠️ Backend pipeline was ABORTED — sending email...'
+
+            mail to: "${env.PERSONAL_EMAIL}",
+                 subject: "BACKEND ABORTED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: """Hello Suhas,
+
+The BACKEND Jenkins job '${env.JOB_NAME}' build #${env.BUILD_NUMBER} was ABORTED.
+
+This often happens when:
+- The approval step was cancelled, or
+- Someone clicked "Abort" in the Jenkins UI.
+
+Build URL : ${env.BUILD_URL}
+
+Regards,
+Jenkins (Backend pipeline)
+"""
+        }
+
         always {
             echo 'Backend post actions finished.'
         }
     }
 }
+
 
 
 
