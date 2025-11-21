@@ -159,6 +159,147 @@
 // }
 // this pipeline is working all up to deployment also 
 
+// pipeline {
+//     agent any  // Windows Jenkins agent
+
+//     environment {
+//         REPO_URL        = 'https://github.com/Suhasreddy257/xr-dashbaoard-backend-dev.git'
+//         GIT_CREDENTIALS = 'token'   // Jenkins credential ID
+//         SOLUTION_FILE   = 'AP.CHRP.XRDB.WebApi.sln'
+//         WEBAPI_PROJECT  = 'AP.CHRP.XRDB.WebApi/AP.CHRP.XRDB.WebApi.csproj'
+
+//         // Folder where published files should go
+//         PUBLISH_DIR     = 'D:\\backend_codebuildpipeline'
+
+//         // IIS config
+//         IIS_SITE_NAME   = 'XRdashboard_Backend'
+//         IIS_APPPOOL     = 'XRdashboard_Backend'  // change if your app pool has a different name
+
+//         // Email notification (same email as frontend)
+//         PERSONAL_EMAIL  = 'reddydr257@gmail.com'
+//     }
+
+//     stages {
+//         stage('Checkout') {
+//             steps {
+//                 echo 'Checking out code from GitHub (master branch)...'
+//                 git branch: 'master',
+//                     credentialsId: GIT_CREDENTIALS,
+//                     url: REPO_URL
+//             }
+//         }
+
+//         stage('Restore') {
+//             steps {
+//                 echo 'Running dotnet restore...'
+//                 bat """
+//                 dotnet restore "${SOLUTION_FILE}"
+//                 """
+//             }
+//         }
+
+//         stage('Build') {
+//             steps {
+//                 echo 'Building solution in Release mode...'
+//                 bat """
+//                 dotnet build "${SOLUTION_FILE}" -c Release --no-restore
+//                 """
+//             }
+//         }
+
+//         stage('Test') {
+//             steps {
+//                 echo 'Running tests...'
+//                 bat """
+//                 dotnet test "${SOLUTION_FILE}" -c Release --no-build
+//                 """
+//             }
+//         }
+
+//         stage('Publish') {
+//             steps {
+//                 echo "Publishing WebApi project to ${PUBLISH_DIR} ..."
+//                 bat """
+//                 dotnet publish "${WEBAPI_PROJECT}" -c Release -o "${PUBLISH_DIR}"
+//                 """
+//             }
+//         }
+
+//         stage('Deploy to IIS') {
+//             steps {
+//                 echo "Updating IIS site '${IIS_SITE_NAME}' and restarting..."
+//                 powershell '''
+//                   Import-Module WebAdministration
+
+//                   $siteName = $env:IIS_SITE_NAME
+//                   $appPool  = $env:IIS_APPPOOL
+//                   $path     = $env:PUBLISH_DIR
+
+//                   Write-Host "Setting IIS site path for $siteName to $path"
+//                   Set-ItemProperty "IIS:\\Sites\\$siteName" -Name physicalPath -Value $path
+
+//                   Write-Host "Restarting App Pool: $appPool"
+//                   Restart-WebAppPool -Name $appPool
+
+//                   Write-Host "Restarting Site: $siteName"
+//                   Restart-WebItem "IIS:\\Sites\\$siteName"
+//                 '''
+//             }
+//         }
+//     }
+
+//     post {
+//         success {
+//             echo '✅ Backend build, test, publish, and IIS deploy completed successfully — sending email...'
+
+//             mail to: "${env.PERSONAL_EMAIL}",
+//                  subject: "BACKEND SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+//                  body: """Hello Suhas,
+
+// The BACKEND Jenkins job '${env.JOB_NAME}' build #${env.BUILD_NUMBER} completed SUCCESSFULLY.
+
+// Backend details:
+// - Solution : ${env.SOLUTION_FILE}
+// - Publish  : ${env.PUBLISH_DIR}
+// - IIS site : ${env.IIS_SITE_NAME}
+
+// Build URL : ${env.BUILD_URL}
+
+// Regards,
+// Jenkins (Backend pipeline)
+// """
+//         }
+
+//         failure {
+//             echo '❌ Backend pipeline failed — sending email...'
+
+//             mail to: "${env.PERSONAL_EMAIL}",
+//                  subject: "BACKEND FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+//                  body: """Hello Suhas,
+
+// The BACKEND Jenkins job '${env.JOB_NAME}' build #${env.BUILD_NUMBER} has FAILED.
+
+// Backend details:
+// - Solution : ${env.SOLUTION_FILE}
+// - Publish  : ${env.PUBLISH_DIR}
+// - IIS site : ${env.IIS_SITE_NAME}
+
+// Build URL : ${env.BUILD_URL}
+
+// Please check the Jenkins console output for error details.
+
+// Regards,
+// Jenkins (Backend pipeline)
+// """
+//         }
+
+//         always {
+//             echo 'Backend post actions finished.'
+//         }
+//     }
+// }
+//This pipeline is working all and come to send email succes also
+
 pipeline {
     agent any  // Windows Jenkins agent
 
@@ -186,6 +327,51 @@ pipeline {
                 git branch: 'master',
                     credentialsId: GIT_CREDENTIALS,
                     url: REPO_URL
+            }
+        }
+
+        stage('Approval Before Build & Deploy') {
+            steps {
+                script {
+                    echo 'Sending approval email before backend build & deploy...'
+
+                    // 1) Send approval request email
+                    mail to: "${env.PERSONAL_EMAIL}",
+                         subject: "APPROVAL REQUIRED: BACKEND build & deploy ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                         body: """Hello Suhas,
+
+A new BACKEND build & deploy has been triggered for:
+
+Job      : ${env.JOB_NAME}
+Build    : #${env.BUILD_NUMBER}
+Git repo : ${env.REPO_URL}
+
+The pipeline is waiting for your approval BEFORE proceeding to:
+- dotnet restore / build / test / publish
+- IIS deploy to site: ${env.IIS_SITE_NAME}
+- Physical path: ${env.PUBLISH_DIR}
+
+Please open the Jenkins build page below and click "Proceed" to approve,
+or "Abort" to stop the deployment:
+
+${env.BUILD_URL}
+
+Regards,
+Jenkins (Backend pipeline)
+"""
+
+                    // 2) Wait for manual approval in Jenkins UI
+                    timeout(time: 2, unit: 'HOURS') {    // adjust time as you like
+                        input message: 'Approve BACKEND build & deploy to IIS?',
+                              ok: 'Approve and continue'
+                        // You can restrict who can approve (optional):
+                        // input message: 'Approve BACKEND build & deploy to IIS?',
+                        //       ok: 'Approve and continue',
+                        //       submitter: 'Suhas'  // Jenkins username
+                    }
+
+                    echo 'Approval received, continuing pipeline...'
+                }
             }
         }
 
@@ -298,5 +484,6 @@ Jenkins (Backend pipeline)
         }
     }
 }
+
 
 
