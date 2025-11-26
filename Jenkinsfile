@@ -522,8 +522,6 @@ pipeline {
     }
 
     stages {
-
-        /* ------------------ 1. Create timestamp folder ------------------ */
         stage('Prepare Timestamp Deploy Folder') {
             steps {
                 script {
@@ -538,7 +536,6 @@ pipeline {
             }
         }
 
-        /* ------------------ 2. Checkout ------------------ */
         stage('Checkout') {
             steps {
                 echo 'Checking out backend code...'
@@ -547,8 +544,6 @@ pipeline {
                     url: REPO_URL
             }
         }
-
-        /* ------------------ 3. dotnet restore ------------------ */
         stage('Restore') {
             steps {
                 bat """
@@ -556,8 +551,6 @@ pipeline {
                 """
             }
         }
-
-        /* ------------------ 4. dotnet build ------------------ */
         stage('Build') {
             steps {
                 bat """
@@ -574,8 +567,6 @@ pipeline {
                 """
             }
         }
-
-        /* ------------------ 6. dotnet publish ------------------ */
         stage('Publish') {
             steps {
                 echo "Publishing backend to: ${env.DEPLOY_TARGET}"
@@ -590,7 +581,6 @@ pipeline {
             }
         }
 
-        /* ------------------ 7. Deploy to IIS ------------------ */
         stage('Deploy to IIS') {
             steps {
                 powershell '''
@@ -612,8 +602,6 @@ pipeline {
             }
         }
     }
-
-    /* ------------------ POST BUILD EMAIL ------------------ */
 
     post {
 
